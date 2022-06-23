@@ -20,14 +20,13 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 		hashToPath[hash] = p
 	}
 
-	var tocEntries []nvc.TocEntry
-	tocEntries, err = nvc.ReadToc(r)
+	tocEntries, err := nvc.ReadToc(r)
 	if err != nil {
 		return err
 	}
 
 	entries := map[nvc.Hash]nvc.TocEntry{}
-	for _, e := range(tocEntries) {
+	for _, e := range tocEntries {
 		entries[e.Hash] = e
 	}
 

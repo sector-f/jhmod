@@ -28,7 +28,7 @@ func ReadToc(r io.Reader) ([]TocEntry, error) {
 
 	entries := make([]TocEntry, count)
 
-	for i := range(entries) {
+	for i := range entries {
 		entry, eErr := readEntry(r)
 		if eErr != nil {
 			return nil, eErr

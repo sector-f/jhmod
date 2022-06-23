@@ -24,7 +24,12 @@ var listCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		for _, entry := range entries {
-			fmt.Printf("%v %v bytes\n", nvc.Hash2String(entry.Hash), entry.RawLength)
+			fmt.Printf("%v offset=%v %vB (%vB on disk) flags=%v\n",
+				nvc.Hash2String(entry.Hash),
+				entry.Offset,
+				entry.RawLength,
+				entry.Length,
+				entry.Flags)
 		}
 	},
 }

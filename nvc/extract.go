@@ -1,80 +1,33 @@
 package nvc
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"io"
 	"os"
 	"strconv"
 )
 
-// TODO: maybe pick a better name for this type
-type compressionType uint32
-
-const (
-	uncompressed compressionType = 0
-	compressed   compressionType = 1
-	encrypted    compressionType = 3
-
-	nvcMagicBytes = "nvc1d\x00\x00\x00"
-)
-
-type nvcEntry struct {
-	Hash        uint64
-	Offset      uint32
-	RawLength   uint32 // Uncompressed length
-	Length      uint32 // Actual length in file
-	Compression compressionType
-}
-
-func Hash2String(hash uint64) string {
-	return fmt.Sprintf("%016x", hash)
-}
-
-func String2Hash(s string) uint64 {
-	hash := fnv.New64a()
-	hash.Write([]byte(s))
-	return hash.Sum64()
-}
-
-func readNVCMagic(r io.Reader) (bool, error) {
+func ReadMagic(r io.Reader) error {
 	header := [8]byte{}
 	if _, err := io.ReadFull(r, header[:]); err != nil {
-		return false, err
+		return err
 	}
 
-	if string(header[:]) != nvcMagicBytes {
-		return false, errors.New(".nvc signature not found")
+	if string(header[:]) != MAGIC {
+		return errors.New(".nvc signature not found")
 	}
 
-	return true, nil
-}
-
-func readNvcEntry(r io.Reader) (nvcEntry, error) {
-	var e nvcEntry
-	if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
-		return e, err
-	}
-	return e, nil
-}
-
-func readCount(r io.Reader) (uint32, error) {
-	var count uint32
-	if err := binary.Read(r, binary.LittleEndian, &count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	return nil
 }
 
 func extractNVC(arcPath string, pathlist []string, outputDirectory string, extractUnknown bool) error {
-	arcFile, err := os.Open(arcPath)
+	r, err := os.Open(arcPath)
 	if err != nil {
 		return err
 	}
 
-	if ok, err :=  readNVCMagic(arcFile); !ok {
+	if err :=  ReadMagic(r); err != nil {
 		return err
 	}
 
@@ -84,27 +37,24 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 		hashToPath[hash] = p
 	}
 
-	var numEntries uint32
-	numEntries, err = readCount(arcFile)
+	var tocEntries []TocEntry
+	tocEntries, err = ReadToc(r)
 	if err != nil {
-		return nil
+		return err
 	}
 
-	entries := map[uint64]nvcEntry{}
-
-	for i := 0; i < int(numEntries); i++ {
-		var e nvcEntry
-		binary.Read(arcFile, binary.LittleEndian, &e)
+	entries := map[uint64]TocEntry{}
+	for _, e := range(tocEntries) {
 		entries[e.Hash] = e
 	}
 
 	extractedCount := 0
 
 	for hash, nvcEntry := range entries {
-		switch nvcEntry.Compression {
-		case uncompressed:
+		switch nvcEntry.Flags {
+		case UNCOMPRESSED:
 			// Do nothing
-		case compressed:
+		case COMPRESSED:
 			// TODO: Perform zlib decompression
 		default:
 			continue
@@ -112,13 +62,13 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 
 		_, exists := hashToPath[hash]
 		if extractUnknown || exists {
-			_, err = arcFile.Seek(int64(nvcEntry.Offset), 0) // "0 means relative to the origin of the file"
+			_, err = r.Seek(int64(nvcEntry.Offset), 0) // "0 means relative to the origin of the file"
 			if err != nil {
 				continue
 			}
 
 			data := make([]byte, nvcEntry.Length)
-			_, err = io.ReadFull(arcFile, data)
+			_, err = io.ReadFull(r, data)
 			if err != nil {
 				continue
 			}

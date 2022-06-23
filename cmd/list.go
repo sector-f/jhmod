@@ -14,16 +14,16 @@ var listCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		reader, openErr := os.Open(args[0])
-		if (openErr != nil) {
-			fmt.Println(openErr)
+		if openErr != nil {
+			fmt.Fprintln(os.Stderr, openErr)
 			os.Exit(1)
 		}
 		entries, listErr := nvc.ListEntries(reader)
-		if (listErr != nil) {
-			fmt.Println(listErr)
+		if listErr != nil {
+			fmt.Fprintln(os.Stderr, listErr)
 			os.Exit(1)
 		}
-		for _, entry := range(entries) {
+		for _, entry := range entries {
 			fmt.Printf("%v %v bytes\n", nvc.Hash2String(entry.Hash), entry.RawLength)
 		}
 	},

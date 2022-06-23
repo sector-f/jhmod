@@ -47,7 +47,7 @@ func readMagic(r io.Reader) error {
 		return err
 	}
 
-	if string(header[:]) != MAGIC {
+	if string(header[:]) != magic {
 		return errors.New(".nvc signature not found")
 	}
 

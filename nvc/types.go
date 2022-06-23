@@ -4,11 +4,11 @@ type EntryFlags uint32
 type Hash uint64
 
 const (
-	UNCOMPRESSED EntryFlags = 0
-	COMPRESSED   EntryFlags = 1
-	ENCRYPTED    EntryFlags = 2
+	Uncompressed EntryFlags = 0
+	Compressed   EntryFlags = 1
+	Encrypted    EntryFlags = 2
 
-	MAGIC = "nvc1d\x00\x00\x00"
+	magic = "nvc1d\x00\x00\x00"
 )
 
 type TocEntry struct {

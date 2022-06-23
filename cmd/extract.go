@@ -35,9 +35,9 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 
 	for hash, nvcEntry := range entries {
 		switch nvcEntry.Flags {
-		case nvc.UNCOMPRESSED:
+		case nvc.Uncompressed:
 			// Do nothing
-		case nvc.COMPRESSED:
+		case nvc.Compressed:
 			// TODO: Perform zlib decompression
 		default:
 			continue

@@ -1,25 +1,12 @@
-package nvc
+package cmd
 
 import (
-	"errors"
-	"fmt"
-	"io"
 	"os"
-	"strconv"
+	"io"
+	"fmt"
+
+	"github.com/sector-f/jh_extract/nvc"
 )
-
-func ReadMagic(r io.Reader) error {
-	header := [8]byte{}
-	if _, err := io.ReadFull(r, header[:]); err != nil {
-		return err
-	}
-
-	if string(header[:]) != MAGIC {
-		return errors.New(".nvc signature not found")
-	}
-
-	return nil
-}
 
 func extractNVC(arcPath string, pathlist []string, outputDirectory string, extractUnknown bool) error {
 	r, err := os.Open(arcPath)
@@ -27,23 +14,19 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 		return err
 	}
 
-	if err :=  ReadMagic(r); err != nil {
-		return err
-	}
-
-	hashToPath := map[uint64]string{}
+	hashToPath := map[nvc.Hash]string{}
 	for _, p := range pathlist {
-		hash := String2Hash(p)
+		hash := nvc.String2Hash(p)
 		hashToPath[hash] = p
 	}
 
-	var tocEntries []TocEntry
-	tocEntries, err = ReadToc(r)
+	var tocEntries []nvc.TocEntry
+	tocEntries, err = nvc.ReadToc(r)
 	if err != nil {
 		return err
 	}
 
-	entries := map[uint64]TocEntry{}
+	entries := map[nvc.Hash]nvc.TocEntry{}
 	for _, e := range(tocEntries) {
 		entries[e.Hash] = e
 	}
@@ -52,9 +35,9 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 
 	for hash, nvcEntry := range entries {
 		switch nvcEntry.Flags {
-		case UNCOMPRESSED:
+		case nvc.UNCOMPRESSED:
 			// Do nothing
-		case COMPRESSED:
+		case nvc.COMPRESSED:
 			// TODO: Perform zlib decompression
 		default:
 			continue
@@ -101,7 +84,7 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 					ext = ".unknown"
 				}
 
-				path = dirName + strconv.FormatUint(hash, 10) + ext
+				path = fmt.Sprintf("%s%v%s", dirName, hash, ext)
 			}
 
 			outputPath := outputDirectory + path

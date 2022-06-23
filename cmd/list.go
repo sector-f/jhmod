@@ -4,6 +4,7 @@ import 	(
 	"fmt"
 	"os"
 	"github.com/spf13/cobra"
+
 	"github.com/sector-f/jh_extract/nvc"
 )
 
@@ -18,18 +19,13 @@ var listCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, openErr)
 			os.Exit(1)
 		}
-		entries, listErr := nvc.ListEntries(reader)
+		entries, listErr := nvc.ReadToc(reader)
 		if listErr != nil {
 			fmt.Fprintln(os.Stderr, listErr)
 			os.Exit(1)
 		}
 		for _, entry := range entries {
-			fmt.Printf("%v offset=%v %vB (%vB on disk) flags=%v\n",
-				nvc.Hash2String(entry.Hash),
-				entry.Offset,
-				entry.RawLength,
-				entry.Length,
-				entry.Flags)
+			fmt.Println(entry)
 		}
 	},
 }

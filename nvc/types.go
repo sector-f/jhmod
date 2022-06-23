@@ -1,6 +1,7 @@
 package nvc
 
 type EntryFlags uint32
+type Hash uint64
 
 const (
 	UNCOMPRESSED EntryFlags = 0
@@ -11,7 +12,7 @@ const (
 )
 
 type TocEntry struct {
-	Hash        uint64
+	Hash        Hash
 	Offset      uint32
 	RawLength   uint32 // Uncompressed length
 	Length      uint32 // Actual length in file

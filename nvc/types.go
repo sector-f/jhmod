@@ -6,7 +6,7 @@ type Hash uint64
 const (
 	Uncompressed EntryFlags = 0
 	Compressed   EntryFlags = 1
-	Encrypted    EntryFlags = 2
+	Encrypted    EntryFlags = 3
 
 	magic = "nvc1d\x00\x00\x00"
 )

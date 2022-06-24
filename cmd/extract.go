@@ -101,6 +101,9 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 				case "RIFF":
 					dirName = filepath.Join("data", "unknown_wav")
 					ext = ".wav"
+				case "\x03\x02\x23\x07":
+					dirName = filepath.Join("data", "unknown_spirv")
+					ext = ".spirv"
 				default:
 					dirName = filepath.Join("data", "unknown")
 					ext = ".unknown"

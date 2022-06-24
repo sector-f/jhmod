@@ -6,6 +6,7 @@ import 	(
 	"regexp"
 	"bufio"
 	"io"
+	"sort"
 
 	"github.com/spf13/cobra"
 )
@@ -37,20 +38,40 @@ var pathlistScanCmd = &cobra.Command{
 			fmt.Fprintln(os.Stderr, openErr)
 			os.Exit(1)
 		}
-		matches := make(map[string]bool)
+		matches := make(map[string]struct{})
 		// Borrowed from https://go.dev/play/p/aPrAW7XGHi
+		offset := int64(0)
 		for {
+			// reader.Seek(offset, 0)
+			// r.Reset(reader)  // Reset buffer so it starts searching at next offset.
+
 			m := pattern.FindReaderIndex(r)
 			if m == nil {
 				break
 			}
-			fmt.Fprintln(os.Stderr, m[0])
+
+			offset += int64(m[0])  // Add the offset.
+			reader.Seek(offset, 0)  // Seek to the match.
+			r.Reset(reader)  // Flush buffer so buffered reader is looking where we want it to.
+
 			b := make([]byte, m[1]-m[0])
-			reader.Seek(int64(m[0]), 0)
-			io.ReadFull(reader, b)
-			matches[string(b[:])] = true
-			r.Reset(reader)  // XXX add a comment explaining what this does.
+			io.ReadFull(r, b)
+			s := string(b[:])
+
+			fmt.Fprintf(os.Stderr, "offset=%v s=%v\n", offset, s)
+
+			matches[s] = struct{}{}  // Set membership
+			offset += int64(m[1] - m[0])  // Keep record of where we think the reader is looking next.
 		}
-		fmt.Printf("Found %v matches.", len(matches))
+		fmt.Fprintf(os.Stderr, "Found %v matches.", len(matches))
+		ary := []string{}
+		for path, _ := range matches {
+			ary = append(ary, path)
+		}
+
+		sort.Strings(ary)
+		for _, path := range ary {
+			fmt.Println(path)
+		}
 	},
 }

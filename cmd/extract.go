@@ -83,33 +83,32 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 			if exists { // If this entry's name was in pathlist, then we use its name...
 				path = hashToPath[hash]
 			} else { // ...And if it wasn't, then we make up a name using the hash
-				var (
+				type filetype struct {
 					dirName string
 					ext     string
-				)
-
-				switch string(data[:4]) {
-				case "\x89PNG":
-					dirName = filepath.Join("data", "unknown_png")
-					ext = ".png"
-				case "nmf1":
-					dirName = filepath.Join("data", "unknown_nmd")
-					ext = ".nmd"
-				case "OggS":
-					dirName = filepath.Join("data", "unknown_ogg")
-					ext = ".ogg"
-				case "RIFF":
-					dirName = filepath.Join("data", "unknown_wav")
-					ext = ".wav"
-				case "\x03\x02\x23\x07":
-					dirName = filepath.Join("data", "unknown_spirv")
-					ext = ".spirv"
-				default:
-					dirName = filepath.Join("data", "unknown")
-					ext = ".unknown"
 				}
 
-				path = filepath.Join(dirName, hash.String()+ext)
+				filetypes := map[string]filetype{
+					"\x89PNG":          {"unknown_png", ".png"},
+					"nmf1":             {"unknown_nmd", ".nmd"},
+					"OggS":             {"unknown_ogg", ".ogg"},
+					"RIFF":             {"unknown_wav", ".wav"},
+					"\x03\x02\x23\x07": {"unknown_spirv", ".spirv"},
+				}
+
+				// Default values that get overwritten if possible
+				var (
+					dirName string = "unknown"
+					ext     string = ".unknown"
+				)
+
+				magicBytes := string(data[:4])
+				if ftype, exists := filetypes[magicBytes]; exists {
+					dirName = ftype.dirName
+					ext = ftype.ext
+				}
+
+				path = filepath.Join("data", dirName, hash.String()+ext)
 			}
 
 			outputPath := filepath.Join(outputDirectory, path)

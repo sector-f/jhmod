@@ -9,7 +9,7 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
+	Use:   "list FILE",
 	Short: "Manipulate nvc files",
 	Long:  `based off jh_extract.py`,
 	Args:  cobra.ExactArgs(1),

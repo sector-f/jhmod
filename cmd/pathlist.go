@@ -1,11 +1,11 @@
 package cmd
 
-import 	(
+import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
-	"bufio"
-	"io"
 	"sort"
 
 	"github.com/spf13/cobra"
@@ -22,9 +22,9 @@ var pathlistCmd = &cobra.Command{
 
 func pathlistScanCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "scan FILE",
+		Use:   "scan FILE",
 		Short: "Scan a core dump for interesting paths",
-		Args: cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			verbose, _ := cmd.PersistentFlags().GetBool("verbose")
 			regex := *regexp.MustCompile("data/[A-Za-z0-9_./]+\\.[a-zA-Z0-9]+")
@@ -39,7 +39,7 @@ func pathlistScanCmd() *cobra.Command {
 
 			matches := make(map[string]struct{})
 			offset := int64(0)
-			for {  // Inspired from https://go.dev/play/p/aPrAW7XGHi
+			for { // Inspired from https://go.dev/play/p/aPrAW7XGHi
 
 				m := regex.FindReaderIndex(r)
 				if m == nil {
@@ -47,8 +47,8 @@ func pathlistScanCmd() *cobra.Command {
 				}
 
 				offset += int64(m[0])  // Add the offset.
-				reader.Seek(offset, 0)  // Seek to the match.
-				r.Reset(reader)  // Flush buffer so buffered reader is looking where we want it to.
+				reader.Seek(offset, 0) // Seek to the match.
+				r.Reset(reader)        // Flush buffer so buffered reader is looking where we want it to.
 
 				b := make([]byte, m[1]-m[0])
 				io.ReadFull(r, b)
@@ -58,8 +58,8 @@ func pathlistScanCmd() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "offset=%v s=%v\n", offset, s)
 				}
 
-				matches[s] = struct{}{}  // Set membership
-				offset += int64(m[1] - m[0])  // Keep record of where we think the reader is looking next.
+				matches[s] = struct{}{}      // Set membership
+				offset += int64(m[1] - m[0]) // Keep record of where we think the reader is looking next.
 			}
 
 			if verbose {

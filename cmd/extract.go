@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"os"
-	"io"
 	"fmt"
+	"os"
 
 	"github.com/sector-f/jh_extract/nvc"
 )
@@ -33,24 +32,9 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 	extractedCount := 0
 
 	for hash, nvcEntry := range entries {
-		switch nvcEntry.Flags {
-		case nvc.Uncompressed:
-			// Do nothing
-		case nvc.Compressed:
-			// TODO: Perform zlib decompression
-		default:
-			continue
-		}
-
 		_, exists := hashToPath[hash]
 		if extractUnknown || exists {
-			_, err = r.Seek(int64(nvcEntry.Offset), 0) // "0 means relative to the origin of the file"
-			if err != nil {
-				continue
-			}
-
-			data := make([]byte, nvcEntry.Length)
-			_, err = io.ReadFull(r, data)
+			data, err := nvcEntry.Data(r)
 			if err != nil {
 				continue
 			}

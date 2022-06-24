@@ -24,6 +24,7 @@ func extractCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer pathFile.Close()
 
 			pathlist := []string{}
 			scanner := bufio.NewScanner(pathFile)
@@ -48,6 +49,7 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 	if err != nil {
 		return err
 	}
+	defer arcFile.Close()
 
 	hashToPath := map[nvc.Hash]string{}
 	for _, p := range pathlist {
@@ -120,6 +122,7 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 				fmt.Fprintln(os.Stderr, err)
 				continue
 			}
+			defer outFile.Close()
 
 			_, err = outFile.Write(data)
 			if err != nil {

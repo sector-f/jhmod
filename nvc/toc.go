@@ -1,11 +1,13 @@
 package nvc
 
 import (
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
-	"errors"
-	"encoding/binary"
 )
+
+var ErrNoMagicFound error = errors.New("nvc magic bytes not found")
 
 // Reads the Magic Header and Table of Contents from r.
 // The ToC format is as follows:
@@ -18,7 +20,7 @@ import (
 //     d. Actual length of the Entry (64-bit LE unsigned integer)
 //     e. Entry flags (64-bit LE unsigned integer)
 func ReadToc(r io.Reader) ([]TocEntry, error) {
-	if magicErr := readMagic(r) ; magicErr != nil {
+	if magicErr := readMagic(r); magicErr != nil {
 		return nil, magicErr
 	}
 	count, countErr := readCount(r)
@@ -48,7 +50,7 @@ func readMagic(r io.Reader) error {
 	}
 
 	if string(header[:]) != magic {
-		return errors.New(".nvc signature not found")
+		return ErrNoMagicFound
 	}
 
 	return nil

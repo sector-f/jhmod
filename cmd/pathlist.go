@@ -37,6 +37,7 @@ func pathlistScanCmd() *cobra.Command {
 			defer reader.Close()
 			r := bufio.NewReader(reader)
 
+			// Store matches in a set to eliminate duplicates.
 			matches := make(map[string]struct{})
 			offset := int64(0)
 			for { // Inspired from https://go.dev/play/p/aPrAW7XGHi
@@ -58,7 +59,7 @@ func pathlistScanCmd() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "offset=%v s=%v\n", offset, s)
 				}
 
-				matches[s] = struct{}{}      // Set membership
+				matches[s] = struct{}{}
 				offset += int64(m[1] - m[0]) // Keep record of where we think the reader is looking next.
 			}
 

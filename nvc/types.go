@@ -26,15 +26,12 @@ type TocEntry struct {
 }
 
 func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
-	var (
-		reader io.Reader = r
-		err    error
-	)
-
-	_, err = r.Seek(int64(t.Offset), 0)
+	_, err := r.Seek(int64(t.Offset), 0)
 	if err != nil {
 		return []byte{}, err
 	}
+
+	var reader io.Reader = r
 
 	switch t.Flags {
 	case Uncompressed:

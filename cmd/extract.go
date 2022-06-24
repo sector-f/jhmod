@@ -21,16 +21,18 @@ func extractCmd() *cobra.Command {
 			extractUnknown, _ := cmd.PersistentFlags().GetBool("unknown")
 			verbose, _ := cmd.PersistentFlags().GetBool("verbose")
 
-			pathFile, err := os.Open(pathFilename)
-			if err != nil {
-				return err
-			}
-			defer pathFile.Close()
-
 			pathlist := []string{}
-			scanner := bufio.NewScanner(pathFile)
-			for scanner.Scan() {
-				pathlist = append(pathlist, scanner.Text())
+			if pathFilename != "" {
+				pathFile, err := os.Open(pathFilename)
+				if err != nil {
+					return err
+				}
+				defer pathFile.Close()
+
+				scanner := bufio.NewScanner(pathFile)
+				for scanner.Scan() {
+					pathlist = append(pathlist, scanner.Text())
+				}
 			}
 
 			return extractNVC(arcFilename, pathlist, outputDir, extractUnknown, verbose)

@@ -45,7 +45,7 @@ func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 		return []byte{}, errors.New("unsupported")
 	}
 
-	data := make([]byte, t.Length)
+	data := make([]byte, t.RawLength)
 	_, err = io.ReadFull(reader, data)
 	if err != nil {
 		return []byte{}, err

@@ -118,7 +118,7 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 			outputPath := filepath.Join(outputDirectory, path)
 
 			if verbose {
-				fmt.Printf("Extracting %s to %s\n", hash.String(), outputPath)
+				fmt.Println(path)
 			}
 
 			err = os.MkdirAll(filepath.Dir(outputPath), 0755)

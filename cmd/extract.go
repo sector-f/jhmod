@@ -19,6 +19,7 @@ func extractCmd() *cobra.Command {
 			pathFilename, _ := cmd.PersistentFlags().GetString("pathlist")
 			outputDir, _ := cmd.PersistentFlags().GetString("output")
 			extractUnknown, _ := cmd.PersistentFlags().GetBool("unknown")
+			verbose, _ := cmd.PersistentFlags().GetBool("verbose")
 
 			pathFile, err := os.Open(pathFilename)
 			if err != nil {
@@ -32,7 +33,7 @@ func extractCmd() *cobra.Command {
 				pathlist = append(pathlist, scanner.Text())
 			}
 
-			return extractNVC(arcFilename, pathlist, outputDir, extractUnknown)
+			return extractNVC(arcFilename, pathlist, outputDir, extractUnknown, verbose)
 		},
 	}
 
@@ -40,11 +41,12 @@ func extractCmd() *cobra.Command {
 	cmd.PersistentFlags().StringP("pathlist", "p", "", "Path to pathlist file")
 	cmd.PersistentFlags().StringP("output", "o", "", "Output directory")
 	cmd.PersistentFlags().BoolP("unknown", "u", false, "Additionally files which are not named in the pathlist file")
+	cmd.PersistentFlags().BoolP("verbose", "v", false, "Print the names of extracted files to standard output")
 
 	return cmd
 }
 
-func extractNVC(arcPath string, pathlist []string, outputDirectory string, extractUnknown bool) error {
+func extractNVC(arcPath string, pathlist []string, outputDirectory string, extractUnknown bool, verbose bool) error {
 	arcFile, err := os.Open(arcPath)
 	if err != nil {
 		return err
@@ -112,6 +114,10 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 			}
 
 			outputPath := filepath.Join(outputDirectory, path)
+
+			if verbose {
+				fmt.Printf("Extracting %s to %s\n", hash.String(), outputPath)
+			}
 
 			err = os.MkdirAll(filepath.Dir(outputPath), 0755)
 			if err != nil {

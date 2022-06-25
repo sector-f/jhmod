@@ -20,15 +20,16 @@ const (
 
 var ErrNoMagicFound error = errors.New("nvc magic bytes not found")
 
+// TocEntry is a file entry in the table of contents.
 type TocEntry struct {
-	Hash      Hash
-	Offset    uint32
-	RawLength uint32 // Uncompressed length
-	Length    uint32 // Actual length in file
-	Flags     EntryFlags
+	Hash      Hash       // 64-bit FNV-1a hash of the file's path on disk
+	Offset    uint32     // File's offset (in bytes) from the start of the nvc file
+	RawLength uint32     // Length (in bytes) of the file after it has been extracted
+	Length    uint32     // Length (in bytes) of file as it is stored in the nvc file
+	Flags     EntryFlags // Indicates whether file is compressed or encrypted (TODO: determine if this is a bitmask)
 }
 
-// Reads the Magic Header and Table of Contents from r.
+// ReadToc reads the Magic Header and Table of Contents from r.
 // The ToC format is as follows:
 //   1. Magic bytes header (technically not part of the ToC but it comes first)
 //   2. 32 LE unsigned integer -> number of entries in ToC.
@@ -61,6 +62,7 @@ func ReadToc(r io.Reader) ([]TocEntry, error) {
 
 }
 
+// Data returns the file pointed to by t.
 func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	_, err := r.Seek(int64(t.Offset), 0)
 	if err != nil {
@@ -90,7 +92,7 @@ func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	return data, nil
 }
 
-// Read the magic bytes at the beginning of a .nvc file.
+// readMagic reads the magic bytes at the beginning of a .nvc file.
 func readMagic(r io.Reader) error {
 	header := [8]byte{}
 	if _, err := io.ReadFull(r, header[:]); err != nil {
@@ -104,7 +106,7 @@ func readMagic(r io.Reader) error {
 	return nil
 }
 
-// Read a single entry from the ToC.
+// readEntry reads a single ToC entry from r.
 func readEntry(r io.Reader) (TocEntry, error) {
 	var e TocEntry
 	if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
@@ -113,7 +115,7 @@ func readEntry(r io.Reader) (TocEntry, error) {
 	return e, nil
 }
 
-// Read the ToC entry count.
+// readCount reads the ToC entry count from r.
 func readCount(r io.Reader) (uint32, error) {
 	var count uint32
 	if err := binary.Read(r, binary.LittleEndian, &count); err != nil {

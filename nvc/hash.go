@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 )
 
+// Hash is a 64-bit FNV-1a hash
 type Hash uint64
 
 func String2Hash(s string) Hash {

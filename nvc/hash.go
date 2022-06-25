@@ -5,6 +5,8 @@ import (
 	"hash/fnv"
 )
 
+type Hash uint64
+
 func String2Hash(s string) Hash {
 	hash := fnv.New64a()
 	hash.Write([]byte(s))

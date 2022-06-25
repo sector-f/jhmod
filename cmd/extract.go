@@ -55,38 +55,29 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 	}
 	defer arcFile.Close()
 
-	hashToPath := map[nvc.Hash]string{}
+	hashedPathlist := map[nvc.Hash]string{}
 	for _, p := range pathlist {
 		hash := nvc.String2Hash(p)
-		hashToPath[hash] = p
+		hashedPathlist[hash] = p
 	}
 
-	tocEntries, err := nvc.ReadToc(arcFile)
+	archive, err := nvc.Parse(arcFile)
 	if err != nil {
 		return err
 	}
 
-	entries := map[nvc.Hash]nvc.TocEntry{}
-	for _, e := range tocEntries {
-		entries[e.Hash] = e
-	}
-
 	extractedCount := 0
 
-	for hash, nvcEntry := range entries {
-		_, exists := hashToPath[hash]
+	for _, hash := range archive.EntryOrder {
+		path, exists := hashedPathlist[hash]
 		if extractUnknown || exists {
-			data, err := nvcEntry.Data(arcFile)
+			data, err := archive.File(hash)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				continue
 			}
 
-			var path string // File path/name as stored (hashed) in ToC
-
-			if exists { // If this entry's name was in pathlist, then we use its name...
-				path = hashToPath[hash]
-			} else { // ...And if it wasn't, then we make up a name using the hash
+			if !exists { // If the path wasn't in the pathlist, make up a name using the hash
 				type filetype struct {
 					dirName string
 					ext     string
@@ -112,6 +103,7 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 					ext = ftype.ext
 				}
 
+				// All the other paths start in the data directory, so do the same here
 				path = filepath.Join("data", dirName, hash.String()+ext)
 			}
 

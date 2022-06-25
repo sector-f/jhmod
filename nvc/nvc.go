@@ -33,6 +33,88 @@ const (
 
 var ErrNoMagicFound error = errors.New("nvc magic bytes not found")
 
+type Archive struct {
+	Entries    map[Hash]TocEntry // Map of hashes to table of contents entries
+	EntryOrder []Hash            // List of entry hashes in the order that they are stored in the archive
+
+	r io.ReadSeekCloser
+}
+
+// Parse reads r and attempts to interpret is as an NVC archive.
+// This function takes ownership of r; it should not be used by the caller after Parse has been called.
+func Parse(r io.ReadSeekCloser) (Archive, error) {
+	if magicErr := readMagic(r); magicErr != nil {
+		return Archive{}, magicErr
+	}
+
+	count, countErr := readCount(r)
+	if countErr != nil {
+		return Archive{}, countErr
+	}
+
+	entries := make(map[Hash]TocEntry)
+	order := make([]Hash, count)
+
+	var i uint32
+	for i = 0; i < count; i++ {
+		entry, eErr := readEntry(r)
+		if eErr != nil {
+			return Archive{}, eErr
+		}
+
+		entries[entry.Hash] = entry
+		order = append(order, entry.Hash)
+	}
+
+	a := Archive{
+		Entries:    entries,
+		EntryOrder: order,
+		r:          r,
+	}
+
+	return a, nil
+}
+
+// File returns the data for the file that is reference by hash
+func (a Archive) File(hash Hash) ([]byte, error) {
+	entry, exists := a.Entries[hash]
+	if !exists {
+		return nil, errors.New("hash not present in archive")
+	}
+
+	_, err := a.r.Seek(int64(entry.Offset), 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var reader io.Reader = a.r
+
+	switch entry.Flags {
+	case EntryFlagNoCompression:
+		// Do nothing
+	case EntryFlagZlibCompression:
+		reader, err = zlib.NewReader(a.r)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, errors.New("unsupported entry flag")
+	}
+
+	data := make([]byte, entry.RawLength)
+	_, err = io.ReadFull(reader, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+// Close closes the archive's internal reader
+func (a Archive) Close() {
+	a.r.Close()
+}
+
 // TocEntry is a file entry in the table of contents.
 type TocEntry struct {
 	Hash      Hash       // 64-bit FNV-1a hash of the file's path on disk
@@ -40,60 +122,6 @@ type TocEntry struct {
 	RawLength uint32     // Length (in bytes) of the file after it has been extracted
 	Length    uint32     // Length (in bytes) of file as it is stored in the nvc file
 	Flags     EntryFlags // Indicates whether file is compressed or encrypted (TODO: determine if this is a bitmask)
-}
-
-// ReadToc parses r as an NVC archive and returns its table of contents.
-func ReadToc(r io.Reader) ([]TocEntry, error) {
-	if magicErr := readMagic(r); magicErr != nil {
-		return nil, magicErr
-	}
-	count, countErr := readCount(r)
-	if countErr != nil {
-		return nil, countErr
-	}
-
-	entries := make([]TocEntry, count)
-
-	for i := range entries {
-		entry, eErr := readEntry(r)
-		if eErr != nil {
-			return nil, eErr
-		}
-		entries[i] = entry
-	}
-
-	return entries, nil
-
-}
-
-// Data returns from r the file that t is an entry for.
-func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
-	_, err := r.Seek(int64(t.Offset), 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var reader io.Reader = r
-
-	switch t.Flags {
-	case EntryFlagNoCompression:
-		// Do nothing
-	case EntryFlagZlibCompression:
-		reader, err = zlib.NewReader(r)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, errors.New("unsupported")
-	}
-
-	data := make([]byte, t.RawLength)
-	_, err = io.ReadFull(reader, data)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
 }
 
 func (e TocEntry) String() string {

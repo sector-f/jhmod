@@ -1,3 +1,10 @@
+// Package nvc implements a parser for nvc archive files.
+//
+// The format of an archive is described below. All header values are stored on disk as little endian.
+//
+//   1. NVC magic bytes (8 bytes)
+//   2. Number of entries in the archive's table of contents (32-bit little endian unsigned integer)
+//   3. Table of Contents entries (192 * n bytes, where n is the previously-specified number of entries)
 package nvc
 
 import (
@@ -9,6 +16,7 @@ import (
 	"io"
 )
 
+// EntryFlags describes how a file is stored on disk
 type EntryFlags uint32
 
 const (
@@ -30,16 +38,7 @@ type TocEntry struct {
 	Flags     EntryFlags // Indicates whether file is compressed or encrypted (TODO: determine if this is a bitmask)
 }
 
-// ReadToc reads the Magic Header and Table of Contents from r.
-// The ToC format is as follows:
-//   1. Magic bytes header (technically not part of the ToC but it comes first)
-//   2. 32 LE unsigned integer -> number of entries in ToC.
-//   3. This repeated as many times as the last value indicates:
-//     a. FNV1a hash (64-bit LE unsigned integer)
-//     b. Offset in the NVC archive (64-bit LE unsigned integer)
-//     c. Uncompressed length of the Entry (64-bit LE unsigned integer)
-//     d. Actual length of the Entry (64-bit LE unsigned integer)
-//     e. Entry flags (64-bit LE unsigned integer)
+// ReadToc parses r as an NVC archive and returns its table of contents.
 func ReadToc(r io.Reader) ([]TocEntry, error) {
 	if magicErr := readMagic(r); magicErr != nil {
 		return nil, magicErr
@@ -63,7 +62,7 @@ func ReadToc(r io.Reader) ([]TocEntry, error) {
 
 }
 
-// Data returns the file pointed to by t.
+// Data returns from r the file that t is an entry for.
 func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	_, err := r.Seek(int64(t.Offset), 0)
 	if err != nil {
@@ -91,6 +90,15 @@ func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (e TocEntry) String() string {
+	return fmt.Sprintf("%v offset=%v %vB (%vB on disk) flags=%v",
+		e.Hash,
+		e.Offset,
+		e.RawLength,
+		e.Length,
+		e.Flags)
 }
 
 // readMagic reads the magic bytes at the beginning of a .nvc file.
@@ -123,15 +131,6 @@ func readCount(r io.Reader) (uint32, error) {
 		return 0, err
 	}
 	return count, nil
-}
-
-func (e TocEntry) String() string {
-	return fmt.Sprintf("%v offset=%v %vB (%vB on disk) flags=%v",
-		e.Hash,
-		e.Offset,
-		e.RawLength,
-		e.Length,
-		e.Flags)
 }
 
 // Hash is a 64-bit FNV-1a hash

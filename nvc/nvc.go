@@ -181,14 +181,23 @@ func (h Hash) String() string {
 	return fmt.Sprintf("%016x", uint64(h))
 }
 
+// Writer is an nvc archive writer.
 type Writer struct {
-	toc   []TocEntry
-	w     io.WriteSeeker
+	toc []TocEntry
+	w   io.WriteSeeker
+
+	// index keeps track of how many times Create has been called.
+	// Since the table of contents is at the start of the archive,
+	// and all archive member files are after the table of contents, the number of
+	// files must be known ahead of time. Otherwise, writing the table of contents
+	// would result in member file contents being partially overwritten.
 	index int
 }
 
+// NewWriter returns an nvc archive writer that writes to w.
+// The number of files that will be placed in the archive is specified as length.
 func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
-	// Start by seeking w to where the first file will start
+	// Start by writing 0s to w until the point at which the first file will start
 	headerLen := 8 + 4 + (24 * length)
 	_, err := w.Write(make([]byte, headerLen))
 	if err != nil {
@@ -202,6 +211,9 @@ func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	}, nil
 }
 
+// Create reads an archive member file from r and writes it to w.
+// Create will panic if it is called more times than the value of "length" that was passed to NewWriter.
+// This function is not thread-safe; only one archive member file can be written to w at a time.
 func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	if w.index == len(w.toc) {
 		panic("File count exceeds originally specified number")
@@ -226,6 +238,8 @@ func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	return written, nil
 }
 
+// Finalize writes the nvc header to the start of w.
+// It is an error to call Create after Finalize has been called.
 func (w *Writer) Finalize() error {
 	_, err := w.w.Seek(0, io.SeekStart)
 	if err != nil {

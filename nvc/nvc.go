@@ -8,6 +8,7 @@
 package nvc
 
 import (
+	"bytes"
 	"compress/zlib"
 	"encoding/binary"
 	"errors"
@@ -211,27 +212,70 @@ func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	}, nil
 }
 
+type cumulativeReader struct {
+	r     io.Reader
+	count uint64
+}
+
+func (r *cumulativeReader) Count() uint64 {
+	return r.count
+}
+
+func (r *cumulativeReader) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	r.count += uint64(n)
+	return n, err
+}
+
 // Create reads an archive member file from r and writes it to w.
+// If compress is true, the member file will be compressed using zlib before it is written to the archive.
+// This implementation stores the compressed data in memory before writing it to the archive.
+//
 // Create will panic if it is called more times than the value of "length" that was passed to NewWriter.
 // This function is not thread-safe; only one archive member file can be written to w at a time.
-func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
+func (w *Writer) Create(r io.Reader, hash Hash, compress bool) (int64, error) {
 	if w.index == len(w.toc) {
 		panic("File count exceeds originally specified number")
 	}
+
+	var (
+		writer io.Writer  = w.w
+		flag   EntryFlags = EntryFlagNoCompression
+	)
+
+	buf := &bytes.Buffer{}
+	if compress {
+		writer = zlib.NewWriter(buf)
+		flag = EntryFlagZlibCompression
+	}
+
+	reader := &cumulativeReader{r, 0}
 
 	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
 
 	var entry *TocEntry = &(w.toc[w.index])
 	entry.Hash = hash
 	entry.Offset = uint32(currentPos)
-	entry.Flags = EntryFlagNoCompression
+	entry.Flags = flag
 
-	written, err := io.Copy(w.w, r)
+	written, err := io.Copy(writer, reader)
 	if err != nil {
-		return 0, err
+		return written, err
+	}
+	read := reader.Count()
+
+	if zlibWriter, ok := writer.(*zlib.Writer); ok {
+		zlibWriter.Close()
+		bufSize := int64(buf.Len())
+
+		written, err = io.Copy(w.w, buf)
+		if err != nil {
+			return written, err
+		}
+		written = bufSize
 	}
 
-	entry.RawLength = uint32(written)
+	entry.RawLength = uint32(read)
 	entry.Length = uint32(written)
 	w.index++
 

@@ -21,13 +21,9 @@ func makeTestNVC(file []byte) []byte {
 		pw.Close()
 	}()
 
-	written, err := writer.Create(pr, String2Hash("/path/to/file"))
+	_, err = writer.Create(pr, String2Hash("/path/to/file"), false)
 	if err != nil {
 		panic(err)
-	}
-
-	if written != int64(len(file)) {
-		panic("wrong length")
 	}
 
 	err = writer.Finalize()

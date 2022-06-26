@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+progname="${0##*/}"
+
+cmd_usage() {
+    printf 'Usage: %s
+
+Creates a core dump from the Jupiter Hell process.
+' "$progname"
+    case $* in
+        help) exit 0 ;;
+        *) exit 1 ;;
+    esac
+}
+
+cmd_default() {
+    local pid
+    pid="$(pgrep -x ./jh || :)"
+    if [[ -z $pid ]]; then
+        printf 'Error: could not find Jupiter Hell process to dump.\n' >&2
+        exit 1
+    fi
+    gcore "$pid" 2>&1 | awk '
+/Saved corefile / {
+  print $3;
+  quit;
+}
+'
+}
+
+if [[ $# -ne 0 ]]; then
+    cmd_usage "$@"
+fi
+
+cmd_default

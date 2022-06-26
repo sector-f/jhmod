@@ -140,6 +140,7 @@ func readCount(r io.Reader) (uint32, error) {
 // Hash is a 64-bit FNV-1a hash
 type Hash uint64
 
+// String2Hash returns the 64-bit FNV-1a hash of s
 func String2Hash(s string) Hash {
 	hash := fnv.New64a()
 	hash.Write([]byte(s))

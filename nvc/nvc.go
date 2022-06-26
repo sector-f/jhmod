@@ -66,7 +66,7 @@ func ReadToc(r io.Reader) ([]TocEntry, error) {
 func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	_, err := r.Seek(int64(t.Offset), 0)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	var reader io.Reader = r
@@ -77,16 +77,16 @@ func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	case Compressed:
 		reader, err = zlib.NewReader(r)
 		if err != nil {
-			return []byte{}, err
+			return nil, err
 		}
 	default:
-		return []byte{}, errors.New("unsupported")
+		return nil, errors.New("unsupported")
 	}
 
 	data := make([]byte, t.RawLength)
 	_, err = io.ReadFull(reader, data)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	return data, nil

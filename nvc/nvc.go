@@ -4,7 +4,7 @@
 //
 //   1. NVC magic bytes (8 bytes)
 //   2. Number of entries in the archive's table of contents (32-bit little endian unsigned integer)
-//   3. Table of Contents entries (192 * n bytes, where n is the previously-specified number of entries)
+//   3. Table of Contents entries (24 * n bytes, where n is the previously-specified number of entries)
 package nvc
 
 import (
@@ -37,12 +37,12 @@ type Archive struct {
 	Entries    map[Hash]TocEntry // Map of hashes to table of contents entries
 	EntryOrder []Hash            // List of entry hashes in the order that they are stored in the archive
 
-	r io.ReadSeekCloser
+	r io.ReadSeeker
 }
 
 // Parse reads r and attempts to interpret is as an NVC archive.
 // This function takes ownership of r; it should not be used by the caller after Parse has been called.
-func Parse(r io.ReadSeekCloser) (Archive, error) {
+func Parse(r io.ReadSeeker) (Archive, error) {
 	if magicErr := readMagic(r); magicErr != nil {
 		return Archive{}, magicErr
 	}
@@ -63,7 +63,12 @@ func Parse(r io.ReadSeekCloser) (Archive, error) {
 		}
 
 		entries[entry.Hash] = entry
-		order = append(order, entry.Hash)
+		order[i] = entry.Hash
+	}
+
+	// Sanity check
+	if len(entries) != len(order) {
+		panic(fmt.Sprintf("Lengths of Entries and EntryOrder do not match (%d vs %d)", len(entries), len(order)))
 	}
 
 	a := Archive{
@@ -102,17 +107,12 @@ func (a Archive) File(hash Hash) ([]byte, error) {
 	}
 
 	data := make([]byte, entry.RawLength)
-	_, err = io.ReadFull(reader, data)
+	readBytes, err := io.ReadFull(reader, data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading data after %d bytes: %w", readBytes, err)
 	}
 
 	return data, nil
-}
-
-// Close closes the archive's internal reader
-func (a Archive) Close() {
-	a.r.Close()
 }
 
 // TocEntry is a file entry in the table of contents.

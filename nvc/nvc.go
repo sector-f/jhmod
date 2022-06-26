@@ -27,8 +27,9 @@ const (
 	// EntryFlagEncrypted indicates that the file is encrypted
 	EntryFlagEncrypted EntryFlags = 3
 
-	// NVC file type magic bytes
-	magic = "nvc1d\x00\x00\x00"
+	magic       = "nvc1d\x00\x00\x00" // NVC file type magic bytes
+	headerLen   = 8 + 4               // Length of magic bytes + ToC entry count
+	tocEntryLen = 24                  // Length of single ToC entry
 )
 
 var ErrNoMagicFound error = errors.New("nvc magic bytes not found")
@@ -178,4 +179,64 @@ func String2Hash(s string) Hash {
 
 func (h Hash) String() string {
 	return fmt.Sprintf("%016x", uint64(h))
+}
+
+type Writer struct {
+	toc   []TocEntry
+	w     io.WriteSeeker
+	index int
+}
+
+func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
+	// Start by seeking w to where the first file will start
+	headerLen := 8 + 4 + (24 * length)
+	_, err := w.Seek(int64(headerLen), 0)
+	if err != nil {
+		return Writer{}, err
+	}
+
+	return Writer{
+		toc:   make([]TocEntry, length),
+		w:     w,
+		index: 0,
+	}, nil
+}
+
+func (w Writer) Create(hash Hash) (io.Writer, error) {
+	if w.index == len(w.toc) {
+		panic("File count exceeds originally specified number")
+	}
+
+	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
+
+	var entry *TocEntry = &w.toc[w.index]
+	entry.Hash = hash
+	entry.Offset = uint32(currentPos)
+	entry.Flags = EntryFlagNoCompression
+
+	pr, pw := io.Pipe()
+	go func() {
+		written, err := io.Copy(w.w, pr)
+		if err != nil {
+			entry.RawLength = uint32(written)
+			entry.Length = uint32(written)
+		}
+	}()
+
+	return pw, nil
+}
+
+func (w Writer) Finalize() error {
+	_, err := w.w.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+
+	binary.Write(w.w, binary.LittleEndian, magic)
+	binary.Write(w.w, binary.LittleEndian, len(w.toc))
+	for _, entry := range w.toc {
+		binary.Write(w.w, binary.LittleEndian, entry)
+	}
+
+	return nil
 }

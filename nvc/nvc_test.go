@@ -2,24 +2,41 @@ package nvc
 
 import (
 	"bytes"
-	"encoding/binary"
+	"fmt"
+	"io"
 	"testing"
+
+	"github.com/dsnet/golib/memfile"
 )
 
 func makeTestNVC(file []byte) []byte {
-	entry := TocEntry{
-		Hash:      String2Hash("/path/to/file"),
-		Offset:    8 + 4 + 24, // Magic bytes + ToC entry count + single ToC entry
-		RawLength: uint32(len(file)),
-		Length:    uint32(len(file)),
-		Flags:     EntryFlagNoCompression,
+	nvcFile := &memfile.File{}
+	writer, err := NewWriter(nvcFile, 1)
+	if err != nil {
+		panic(err)
 	}
 
-	nvcFile := bytes.NewBuffer([]byte(magic))
-	binary.Write(nvcFile, binary.LittleEndian, uint32(1))
-	binary.Write(nvcFile, binary.LittleEndian, entry)
-	nvcFile.Write(file)
+	pr, pw := io.Pipe()
+	go func() {
+		pw.Write(file)
+		pw.Close()
+	}()
 
+	written, err := writer.Create(pr, String2Hash("/path/to/file"))
+	if err != nil {
+		panic(err)
+	}
+
+	if written != int64(len(file)) {
+		panic("wrong length")
+	}
+
+	err = writer.Finalize()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(nvcFile.Bytes())
 	return nvcFile.Bytes()
 }
 

@@ -190,7 +190,7 @@ type Writer struct {
 func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	// Start by seeking w to where the first file will start
 	headerLen := 8 + 4 + (24 * length)
-	_, err := w.Seek(int64(headerLen), 0)
+	_, err := w.Write(make([]byte, headerLen))
 	if err != nil {
 		return Writer{}, err
 	}
@@ -202,40 +202,57 @@ func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	}, nil
 }
 
-func (w Writer) Create(hash Hash) (io.Writer, error) {
+func (w Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	if w.index == len(w.toc) {
 		panic("File count exceeds originally specified number")
 	}
 
 	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
 
-	var entry *TocEntry = &w.toc[w.index]
+	var entry *TocEntry = &(w.toc[w.index])
 	entry.Hash = hash
 	entry.Offset = uint32(currentPos)
 	entry.Flags = EntryFlagNoCompression
 
-	pr, pw := io.Pipe()
-	go func() {
-		written, err := io.Copy(w.w, pr)
-		if err != nil {
-			entry.RawLength = uint32(written)
-			entry.Length = uint32(written)
-		}
-	}()
+	fmt.Println("Starting write")
+	written, err := io.Copy(w.w, r)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println("Finished write")
 
-	return pw, nil
+	entry.RawLength = uint32(written)
+	entry.Length = uint32(written)
+	w.index++
+
+	return written, nil
 }
 
 func (w Writer) Finalize() error {
+	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
+	fmt.Println(currentPos)
 	_, err := w.w.Seek(0, io.SeekStart)
 	if err != nil {
 		return err
 	}
+	currentPos, _ = w.w.Seek(0, io.SeekCurrent)
+	fmt.Println(currentPos)
 
-	binary.Write(w.w, binary.LittleEndian, magic)
-	binary.Write(w.w, binary.LittleEndian, len(w.toc))
+	err = binary.Write(w.w, binary.LittleEndian, []byte(magic))
+	if err != nil {
+		return err
+	}
+
+	err = binary.Write(w.w, binary.LittleEndian, int32(len(w.toc)))
+	if err != nil {
+		return err
+	}
+
 	for _, entry := range w.toc {
-		binary.Write(w.w, binary.LittleEndian, entry)
+		err = binary.Write(w.w, binary.LittleEndian, entry)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

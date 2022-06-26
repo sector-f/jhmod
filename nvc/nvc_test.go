@@ -2,7 +2,6 @@ package nvc
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"testing"
 
@@ -36,7 +35,6 @@ func makeTestNVC(file []byte) []byte {
 		panic(err)
 	}
 
-	fmt.Println(nvcFile.Bytes())
 	return nvcFile.Bytes()
 }
 

@@ -202,7 +202,7 @@ func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	}, nil
 }
 
-func (w Writer) Create(r io.Reader, hash Hash) (int64, error) {
+func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	if w.index == len(w.toc) {
 		panic("File count exceeds originally specified number")
 	}
@@ -214,12 +214,10 @@ func (w Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	entry.Offset = uint32(currentPos)
 	entry.Flags = EntryFlagNoCompression
 
-	fmt.Println("Starting write")
 	written, err := io.Copy(w.w, r)
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("Finished write")
 
 	entry.RawLength = uint32(written)
 	entry.Length = uint32(written)
@@ -228,15 +226,11 @@ func (w Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	return written, nil
 }
 
-func (w Writer) Finalize() error {
-	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
-	fmt.Println(currentPos)
+func (w *Writer) Finalize() error {
 	_, err := w.w.Seek(0, io.SeekStart)
 	if err != nil {
 		return err
 	}
-	currentPos, _ = w.w.Seek(0, io.SeekCurrent)
-	fmt.Println(currentPos)
 
 	err = binary.Write(w.w, binary.LittleEndian, []byte(magic))
 	if err != nil {

@@ -20,10 +20,14 @@ import (
 type EntryFlags uint32
 
 const (
-	Uncompressed EntryFlags = 0
-	Compressed   EntryFlags = 1
-	Encrypted    EntryFlags = 3
+	// EntryFlagNoCompression indicates that the file is stored in the NVC archive uncompressed
+	EntryFlagNoCompression EntryFlags = 0
+	// EntryFlagZlibCompression indicates that the file is stored in the NVC archive with zlib compression
+	EntryFlagZlibCompression EntryFlags = 1
+	// EntryFlagEncrypted indicates that the file is encrypted
+	EntryFlagEncrypted EntryFlags = 3
 
+	// NVC file type magic bytes
 	magic = "nvc1d\x00\x00\x00"
 )
 
@@ -72,9 +76,9 @@ func (t TocEntry) Data(r io.ReadSeeker) ([]byte, error) {
 	var reader io.Reader = r
 
 	switch t.Flags {
-	case Uncompressed:
+	case EntryFlagNoCompression:
 		// Do nothing
-	case Compressed:
+	case EntryFlagZlibCompression:
 		reader, err = zlib.NewReader(r)
 		if err != nil {
 			return nil, err

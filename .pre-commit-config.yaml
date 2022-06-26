@@ -12,3 +12,7 @@ repos:
       - id: go-fmt
       - id: go-build
       - id: go-mod-tidy
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: '9daf4ccb1f73e83c75517076bc2c1aafde20a082'
+    hooks:
+      - id: shellcheck

@@ -2,6 +2,7 @@ package nvc
 
 import (
 	"bytes"
+	"compress/zlib"
 	"io"
 	"testing"
 
@@ -21,7 +22,7 @@ func makeTestNVC(file []byte) []byte {
 		pw.Close()
 	}()
 
-	_, err = writer.Create(pr, String2Hash("/path/to/file"), false)
+	_, err = writer.CreateCompressed(pr, String2Hash("/path/to/file"), zlib.DefaultCompression)
 	if err != nil {
 		panic(err)
 	}

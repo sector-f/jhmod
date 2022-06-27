@@ -196,7 +196,8 @@ type Writer struct {
 }
 
 // NewWriter returns an nvc archive writer that writes to w.
-// The number of files that will be placed in the archive is specified as length.
+// length is the number of files that will be placed in the archive.
+// Finalize should be called once all files have been written to the archive (via Create or CreateCompressed).
 func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	// Start by writing 0s to w until the point at which the first file will start
 	headerLen := 8 + 4 + (24 * length)
@@ -212,6 +213,7 @@ func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	}, nil
 }
 
+// cumulativeReader wraps an io.Reader and keeps a running total of how many bytes have been read
 type cumulativeReader struct {
 	r     io.Reader
 	count uint64
@@ -228,58 +230,79 @@ func (r *cumulativeReader) Read(p []byte) (int, error) {
 }
 
 // Create reads an archive member file from r and writes it to w.
-// If compress is true, the member file will be compressed using zlib before it is written to the archive.
-// This implementation stores the compressed data in memory before writing it to the archive.
 //
-// Create will panic if it is called more times than the value of "length" that was passed to NewWriter.
+// Create increments w's internal Table of Contents entry counter by 1; it will panic if this counter exceeds the value of "length" that was passed to NewWriter.
 // This function is not thread-safe; only one archive member file can be written to w at a time.
-func (w *Writer) Create(r io.Reader, hash Hash, compress bool) (int64, error) {
+func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
 	if w.index == len(w.toc) {
 		panic("File count exceeds originally specified number")
 	}
 
-	var (
-		writer io.Writer  = w.w
-		flag   EntryFlags = EntryFlagNoCompression
-	)
-
-	buf := &bytes.Buffer{}
-	if compress {
-		writer = zlib.NewWriter(buf)
-		flag = EntryFlagZlibCompression
-	}
-
 	reader := &cumulativeReader{r, 0}
-
 	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
 
 	var entry *TocEntry = &(w.toc[w.index])
 	entry.Hash = hash
 	entry.Offset = uint32(currentPos)
-	entry.Flags = flag
+	entry.Flags = EntryFlagNoCompression
 
-	written, err := io.Copy(writer, reader)
+	written, err := io.Copy(w.w, reader)
 	if err != nil {
 		return written, err
 	}
 	read := reader.Count()
-
-	if zlibWriter, ok := writer.(*zlib.Writer); ok {
-		zlibWriter.Close()
-		bufSize := int64(buf.Len())
-
-		written, err = io.Copy(w.w, buf)
-		if err != nil {
-			return written, err
-		}
-		written = bufSize
-	}
 
 	entry.RawLength = uint32(read)
 	entry.Length = uint32(written)
 	w.index++
 
 	return written, nil
+}
+
+// CreateCompressed reads an archive member file from r, compresses it using zlib compression, and writes it to w.
+// The entire compressed file is stored in memory before it is written to the archive.
+// See the documentation for [compress/zlib] for the acceptable values of level.
+
+// CreateCompressed increments w's internal Table of Contents entry counter by 1; it will panic if this counter exceeds the value of "length" that was passed to NewWriter.
+// This function is not thread-safe; only one archive member file can be written to w at a time.
+func (w *Writer) CreateCompressed(r io.Reader, hash Hash, level int) (int64, error) {
+	if w.index == len(w.toc) {
+		panic("File count exceeds originally specified number")
+	}
+
+	buf := &bytes.Buffer{}
+	writer, err := zlib.NewWriterLevel(buf, level)
+	if err != nil {
+		return 0, err
+	}
+	reader := &cumulativeReader{r, 0}
+	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
+
+	var entry *TocEntry = &(w.toc[w.index])
+	entry.Hash = hash
+	entry.Offset = uint32(currentPos)
+	entry.Flags = EntryFlagZlibCompression
+
+	bytesWritten, err := io.Copy(writer, reader)
+	if err != nil {
+		return bytesWritten, err
+	}
+	bytesRead := reader.Count()
+
+	writer.Close()
+	bufSize := int64(buf.Len())
+
+	bytesWritten, err = io.Copy(w.w, buf)
+	if err != nil {
+		return bytesWritten, err
+	}
+	bytesWritten = bufSize
+
+	entry.RawLength = uint32(bytesRead)
+	entry.Length = uint32(bytesWritten)
+	w.index++
+
+	return bytesWritten, nil
 }
 
 // Finalize writes the nvc header to the start of w.

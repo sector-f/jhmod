@@ -17,6 +17,7 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(extractCmd())
 	rootCmd.AddCommand(pathlistCmd)
+	rootCmd.AddCommand(createCommand())
 }
 
 func Execute() {

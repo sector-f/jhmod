@@ -21,12 +21,14 @@ var listCmd = &cobra.Command{
 		}
 		defer reader.Close()
 
-		entries, listErr := nvc.ReadToc(reader)
+		archive, listErr := nvc.Parse(reader)
 		if listErr != nil {
 			fmt.Fprintln(os.Stderr, listErr)
 			os.Exit(1)
 		}
-		for _, entry := range entries {
+
+		for _, hash := range archive.EntryOrder {
+			entry, _ := archive.Entries[hash]
 			fmt.Println(entry)
 		}
 	},

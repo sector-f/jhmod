@@ -69,11 +69,6 @@ func Parse(r io.ReadSeeker) (Archive, error) {
 		order[i] = entry.Hash
 	}
 
-	// Sanity check
-	if len(entries) != len(order) {
-		panic(fmt.Sprintf("Lengths of Entries and EntryOrder do not match (%d vs %d)", len(entries), len(order)))
-	}
-
 	a := Archive{
 		Entries:    entries,
 		EntryOrder: order,

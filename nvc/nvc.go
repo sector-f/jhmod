@@ -42,6 +42,7 @@ type Archive struct {
 
 // Parse reads r and attempts to interpret is as an NVC archive.
 // This function takes ownership of r; it should not be used by the caller after Parse has been called.
+// The returned Archive should not be used when the returned error is non-nil.
 func Parse(r io.ReadSeeker) (Archive, error) {
 	if magicErr := readMagic(r); magicErr != nil {
 		return Archive{}, magicErr

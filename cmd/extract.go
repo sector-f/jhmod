@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sector-f/jh_extract/nvc"
+	"github.com/sector-f/jhmod/nvc"
 	"github.com/spf13/cobra"
 )
 

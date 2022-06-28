@@ -1,4 +1,4 @@
-module github.com/sector-f/jh_extract
+module github.com/sector-f/jhmod
 
 go 1.18
 

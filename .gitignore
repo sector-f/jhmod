@@ -1,4 +1,4 @@
-/jh_extract
+/jhmod
 
 # Discourage accidental staging of scratch files used by the tool.
 core.*

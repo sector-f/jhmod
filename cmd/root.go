@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "jh_extract",
+	Use:   "jhmod",
 	Short: "Manipulate nvc files",
 	Long:  `based off jh_extract.py`,
 }

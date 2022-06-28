@@ -36,6 +36,7 @@ func createCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			defer arcFile.Close()
 
 			fileNames := args[1:]
 			writer, err := nvc.NewWriter(arcFile, uint32(len(fileNames)))
@@ -53,6 +54,7 @@ func createCommand() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "Error opening %s: %v\n", fName, err)
 					continue
 				}
+				defer file.Close()
 
 				hashedName := nvc.String2Hash(fName)
 

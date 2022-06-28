@@ -1,5 +1,8 @@
 # jh_extract
 
+[![Build](https://github.com/sector-f/jh_extract/actions/workflows/build.yml/badge.svg)](https://github.com/sector-f/jh_extract/actions/workflows/build.yml)
+
+
 A tool to work with Jupiter Hell game files.
 
 ## Install

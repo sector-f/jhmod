@@ -8,7 +8,6 @@
 package nvc
 
 import (
-	"bytes"
 	"compress/zlib"
 	"encoding/binary"
 	"errors"
@@ -208,6 +207,22 @@ func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	}, nil
 }
 
+// cumulativeWriter wraps an io.Writer and keeps a running total of how many bytes have been written
+type cumulativeWriter struct {
+	w     io.Writer
+	count uint64
+}
+
+func (w *cumulativeWriter) Count() uint64 {
+	return w.count
+}
+
+func (w *cumulativeWriter) Write(p []byte) (int, error) {
+	n, err := w.w.Write(p)
+	w.count += uint64(n)
+	return n, err
+}
+
 // cumulativeReader wraps an io.Reader and keeps a running total of how many bytes have been read
 type cumulativeReader struct {
 	r     io.Reader
@@ -233,10 +248,14 @@ func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
 		panic("File count exceeds originally specified number")
 	}
 
+	// Increment index at start of function so it won't get reused in the event of an early return
+	idx := w.index
+	w.index++
+
 	reader := &cumulativeReader{r, 0}
 	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
 
-	var entry *TocEntry = &(w.toc[w.index])
+	var entry *TocEntry = &(w.toc[idx])
 	entry.Hash = hash
 	entry.Offset = uint32(currentPos)
 	entry.Flags = EntryFlagNoCompression
@@ -249,13 +268,11 @@ func (w *Writer) Create(r io.Reader, hash Hash) (int64, error) {
 
 	entry.RawLength = uint32(read)
 	entry.Length = uint32(written)
-	w.index++
 
 	return written, nil
 }
 
 // CreateCompressed reads an archive member file from r, compresses it using zlib compression, and writes it to w.
-// The entire compressed file is stored in memory before it is written to the archive.
 // See the documentation for [compress/zlib] for the acceptable values of level.
 
 // CreateCompressed increments w's internal Table of Contents entry counter by 1; it will panic if this counter exceeds the value of "length" that was passed to NewWriter.
@@ -265,37 +282,36 @@ func (w *Writer) CreateCompressed(r io.Reader, hash Hash, level int) (int64, err
 		panic("File count exceeds originally specified number")
 	}
 
-	buf := &bytes.Buffer{}
-	writer, err := zlib.NewWriterLevel(buf, level)
+	// Increment index at start of function so it won't get reused in the event of an early return
+	idx := w.index
+	w.index++
+
+	writer := cumulativeWriter{w.w, 0}
+	zWriter, err := zlib.NewWriterLevel(&writer, level)
 	if err != nil {
 		return 0, err
 	}
+
 	reader := &cumulativeReader{r, 0}
 	currentPos, _ := w.w.Seek(0, io.SeekCurrent)
 
-	var entry *TocEntry = &(w.toc[w.index])
+	var entry *TocEntry = &(w.toc[idx])
 	entry.Hash = hash
 	entry.Offset = uint32(currentPos)
 	entry.Flags = EntryFlagZlibCompression
 
-	bytesWritten, err := io.Copy(writer, reader)
+	bytesWritten, err := io.Copy(zWriter, reader)
 	if err != nil {
 		return bytesWritten, err
 	}
+
+	zWriter.Close()
+
 	bytesRead := reader.Count()
-
-	writer.Close()
-	bufSize := int64(buf.Len())
-
-	bytesWritten, err = io.Copy(w.w, buf)
-	if err != nil {
-		return bytesWritten, err
-	}
-	bytesWritten = bufSize
+	bytesWritten = int64(writer.Count())
 
 	entry.RawLength = uint32(bytesRead)
 	entry.Length = uint32(bytesWritten)
-	w.index++
 
 	return bytesWritten, nil
 }

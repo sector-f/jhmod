@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -17,18 +18,20 @@ func createCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			verbose, _ := cmd.PersistentFlags().GetBool("verbose")
 
-			isFlagPassed := func(name string) bool {
-				found := false
-				cmd.PersistentFlags().Visit(func(f *pflag.Flag) {
-					if f.Name == name {
-						found = true
-					}
-				})
-				return found
+			shouldCompress := false
+			cmd.Flags().Visit(func(f *pflag.Flag) {
+				if f.Name == "compress" {
+					shouldCompress = true
+				}
+			})
+			compressLevel, _ := cmd.PersistentFlags().GetInt("compress")
+			if shouldCompress {
+				// The zlib library _does_ allow for no compression, but we can just store files in the archive without zlib in that case.
+				// This will save us a few bytes (by omitting the zlib header and checksum)
+				if compressLevel < 1 || compressLevel > 9 {
+					return errors.New("Compression level must be between 1-9")
+				}
 			}
-
-			shouldCompress := isFlagPassed("compress")
-			compressLevel, _ := cmd.PersistentFlags().GetInt("verbose")
 
 			arcFilename := args[0]
 			arcFile, err := os.Create(arcFilename)
@@ -71,7 +74,7 @@ func createCommand() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Print the names of files to standard output")
-	cmd.PersistentFlags().IntP("compress", "c", 0, "Compression level")
+	cmd.PersistentFlags().IntP("compress", "c", 0, "Compression level 1-9 (where 1 is best speed and 9 is best compression)")
 
 	return cmd
 }

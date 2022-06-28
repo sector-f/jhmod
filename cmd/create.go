@@ -26,10 +26,8 @@ func createCommand() *cobra.Command {
 			})
 			compressLevel, _ := cmd.PersistentFlags().GetInt("compress")
 			if shouldCompress {
-				// The zlib library _does_ allow for no compression, but we can just store files in the archive without zlib in that case.
-				// This will save us a few bytes (by omitting the zlib header and checksum)
-				if compressLevel < 1 || compressLevel > 9 {
-					return errors.New("Compression level must be between 1-9")
+				if compressLevel < 0 || compressLevel > 9 {
+					return errors.New("Compression level must be between 0-9")
 				}
 			}
 
@@ -74,7 +72,7 @@ func createCommand() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Print the names of files to standard output")
-	cmd.PersistentFlags().IntP("compress", "c", 0, "Compression level 1-9 (where 1 is best speed and 9 is best compression)")
+	cmd.PersistentFlags().IntP("compress", "c", 0, "Compression level 0-9 (where 0 is no compression, 1 is best speed, and 9 is best compression)")
 
 	return cmd
 }

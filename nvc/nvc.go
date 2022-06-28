@@ -28,8 +28,8 @@ const (
 	EntryFlagEncrypted EntryFlags = 3
 
 	magic       = "nvc1d\x00\x00\x00" // NVC file type magic bytes
-	headerLen   = 8 + 4               // Length of magic bytes + ToC entry count
-	tocEntryLen = 24                  // Length of single ToC entry
+	preambleLen = len(magic) + 4      // Length of magic bytes + length of ToC entry count
+	tocEntryLen = 24                  // Length of a single ToC entry
 )
 
 var ErrNoMagicFound error = errors.New("nvc magic bytes not found")
@@ -194,7 +194,7 @@ type Writer struct {
 // Finalize should be called once all files have been written to the archive (via Create or CreateCompressed).
 func NewWriter(w io.WriteSeeker, length uint32) (Writer, error) {
 	// Start by writing 0s to w until the point at which the first file will start
-	headerLen := 8 + 4 + (24 * length)
+	headerLen := uint32(preambleLen) + (tocEntryLen * length)
 	_, err := w.Write(make([]byte, headerLen))
 	if err != nil {
 		return Writer{}, err

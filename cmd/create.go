@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sector-f/jh_extract/nvc"
+	"github.com/sector-f/jhmod/nvc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

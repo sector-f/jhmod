@@ -1,6 +1,6 @@
-# jh_extract
+# jhmod
 
-[![Build](https://github.com/sector-f/jh_extract/actions/workflows/build.yml/badge.svg)](https://github.com/sector-f/jh_extract/actions/workflows/build.yml)
+[![Build](https://github.com/sector-f/jhmod/actions/workflows/build.yml/badge.svg)](https://github.com/sector-f/jhmod/actions/workflows/build.yml)
 
 
 A tool to work with Jupiter Hell game files.
@@ -17,7 +17,7 @@ how to install golang packages manually.
 export GOPATH="$HOME/go"
 export PATH="$PATH:$GOPATH/bin"
 
-go install github.com/sector-f/jh_extract
+go install github.com/sector-f/jhmod
 ```
 
 ### Nix
@@ -42,10 +42,10 @@ $ ./scripts/get-core
 core.324962
 ```
 
-#### 2) build the pathlist using `jh_extract pathlist scan`
+#### 2) build the pathlist using `jhmod pathlist scan`
 
 ```bash
-$ jh_extract pathlist scan core.324962 | tee pathlist.txt
+$ jhmod pathlist scan core.324962 | tee pathlist.txt
 data/font/terminal8x9_c64i.png
 data/lang/de.csv
 data/lang/pl.csv
@@ -58,11 +58,11 @@ data/lua/jh/gfx/tilesets/ts01/ts01_B.lua
 ### Extract `.nvc` files
 
 **Note: You should consider generating your own pathlist.txt to ensure
-jh_extract knows about all of the paths.  Using an old pathlist.txt may result
+jhmod knows about all of the paths.  Using an old pathlist.txt may result
 in many unknown paths that need to be extracted with `-u`.**
 
 ```bash
-$ jh_extract extract -f core.nvc -p samples/pathlist.txt
+$ jhmod extract -f core.nvc -p samples/pathlist.txt
 Extracted 266 files
 $ ls data/
 font  lang  lua
@@ -71,14 +71,14 @@ font  lang  lua
 #### Q: Where are my assets?
 
 You may need a more complete pathlist.txt.  The one provided is reproducible by
-using `jh_extract pathlist scan`, however, it doesn't find graphics data
+using `jhmod pathlist scan`, however, it doesn't find graphics data
 (TODO).
 
 ## Jupiter Hell Modding cheatsheet
 
 1. Find your game directory that contains `.nvc` files.  There should be
    `assets.nvc` and `core.nvc`.  Note down these paths.
-2. Use `jh_extract extract -f core.nvc -p samples/pathlist.txt` to extract the
+2. Use `jhmod extract -f core.nvc -p samples/pathlist.txt` to extract the
    files into the current directory.  Most (all?) files should be located in a
    `data` subdirectory.
 3. Build an "overlay" directory that mirrors the directory structure of the

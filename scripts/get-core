@@ -22,7 +22,7 @@ cmd_default() {
         printf 'Error: could not find Jupiter Hell process to dump.\n' >&2
         exit 1
     fi
-    gcore "$pid" 2>&1 | awk '
+    gcore "$pid" | awk '
 /Saved corefile / {
   print $3;
   quit;

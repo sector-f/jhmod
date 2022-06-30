@@ -78,33 +78,10 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 			}
 
 			if !exists { // If the path wasn't in the pathlist, make up a name using the hash
-				type filetype struct {
-					dirName string
-					ext     string
-				}
-
-				filetypes := map[string]filetype{
-					"\x89PNG":          {"unknown_png", ".png"},
-					"nmf1":             {"unknown_nmd", ".nmd"},
-					"OggS":             {"unknown_ogg", ".ogg"},
-					"RIFF":             {"unknown_wav", ".wav"},
-					"\x03\x02\x23\x07": {"unknown_spirv", ".spirv"},
-				}
-
-				// Default values that get overwritten if possible
-				var (
-					dirName string = "unknown"
-					ext     string = ".unknown"
-				)
-
-				magicBytes := string(data[:4])
-				if ftype, exists := filetypes[magicBytes]; exists {
-					dirName = ftype.dirName
-					ext = ftype.ext
-				}
+				ftype := getFiletype(data)
 
 				// All the other paths start in the data directory, so do the same here
-				path = filepath.Join("data", dirName, hash.String()+ext)
+				path = filepath.Join("data", ftype.dirName, hash.String()+ftype.ext)
 			}
 
 			outputPath := filepath.Join(outputDirectory, path)
@@ -138,4 +115,36 @@ func extractNVC(arcPath string, pathlist []string, outputDirectory string, extra
 
 	fmt.Printf("Extracted %d files\n", extractedCount)
 	return nil
+}
+
+// filetype is used to specify the directory name and file extension for unknown files
+type filetype struct {
+	dirName string
+	ext     string
+}
+
+// Declaring this as package-scoped makes more sense than re-declaring it on every iteration
+var filetypes = map[string]filetype{
+	"\x89PNG":          {"unknown_png", ".png"},
+	"nmf1":             {"unknown_nmd", ".nmd"},
+	"OggS":             {"unknown_ogg", ".ogg"},
+	"RIFF":             {"unknown_wav", ".wav"},
+	"\x03\x02\x23\x07": {"unknown_spirv", ".spirv"},
+}
+
+// TODO: add some tests for this?
+// See https://github.com/sector-f/jhmod/issues/18
+func getFiletype(f []byte) filetype {
+	// Default values that get overwritten if possible
+	fType := filetype{"unknown", ".unknown"}
+	if len(f) < 4 {
+		return fType
+	}
+
+	magicBytes := string(f[:4])
+	if ft, exists := filetypes[magicBytes]; exists {
+		fType = ft
+	}
+
+	return fType
 }

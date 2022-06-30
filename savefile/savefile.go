@@ -7,8 +7,6 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
-
-	"github.com/sector-f/jhmod/nvc"
 )
 
 const (
@@ -27,30 +25,40 @@ type savedata struct {
 	Seed uint32
 }
 
-// Something was reading for data but got an EOF.
-var UnexpectedEndOfFileErr error = errors.New("unexpected eof")
+// No magic found on save file.
+var ErrNoMagicFound error = errors.New("no magic found")
 
 // General parse error.  TODO make more descriptive errors.
 var SaveParseErr error = errors.New("general parse error")
 
-// Read in a string from a buffer of size suffixed with a length byte.
-func readString(r io.Reader, size int) (string, error) {
+// Return the last byte of buf or panic() when not possible.
+func lastByte(buf []byte) byte {
+	if len(buf) == 0 {
+		panic("lastByte with zero length slice")
+	}
+	return buf[len(buf)-1]
+}
+
+// Returns true if byte looks like ascii, false otherwise.
+func isAscii(b byte) bool {
+	return b != 0 && // NUL
+		b&0b1000_0000 == 0 // 8-bit cleanliness
+}
+
+// Read in a string into a buffer of length size suffixed with a length byte.
+func readString(r io.Reader, size uint) (string, error) {
 	buf := make([]byte, size)
-	nRead, err := r.Read(buf[:])
-	if err != nil {
+	if _, err := io.ReadFull(r, buf[:]); err != nil {
 		return "", err
 	}
-	if nRead != size {
-		return "", UnexpectedEndOfFileErr
-	}
-	recordedSize := buf[size-1]
-	if int(recordedSize) > size {
+	recordedSize := lastByte(buf)
+	if uint(recordedSize) > size {
 		return "", SaveParseErr
 	}
 	stringBytes := buf[:recordedSize]
 
 	for _, b := range stringBytes {
-		if b == 0 {
+		if !isAscii(b) {
 			return "", SaveParseErr
 		}
 	}
@@ -85,7 +93,7 @@ func Parse(r io.Reader) (savedata, error) {
 		return savedata{}, err
 	}
 	if string(header[:]) != magic {
-		return savedata{}, nvc.ErrNoMagicFound
+		return savedata{}, ErrNoMagicFound
 	}
 
 	// Not sure what these bytes are, sometimes they're:

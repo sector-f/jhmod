@@ -41,11 +41,10 @@ func lastByte(buf []byte) byte {
 
 // Returns true if byte looks like ascii, false otherwise.
 func isAscii(b byte) bool {
-	return b != 0 && // NUL
-		b&0b1000_0000 == 0 // 8-bit cleanliness
+	return b > 0 && b <= unicode.MaxASCII
 }
 
-// Read in a string into a buffer of length size suffixed with a length byte.
+// readString reads size bytes from r, interprets the final byte read as an unsigned integer `n`, and returns a string consisting of the first n bytes that were read from r
 func readString(r io.Reader, size uint) (string, error) {
 	buf := make([]byte, size)
 	if _, err := io.ReadFull(r, buf[:]); err != nil {

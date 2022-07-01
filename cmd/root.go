@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sector-f/jhmod/cmd/nvccmd"
 	"github.com/spf13/cobra"
 )
 
@@ -14,10 +15,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(extractCmd())
-	rootCmd.AddCommand(pathlistCmd)
-	rootCmd.AddCommand(createCommand())
+	rootCmd.AddCommand(nvccmd.Cmd())
 	rootCmd.AddCommand(saveCmd)
 }
 

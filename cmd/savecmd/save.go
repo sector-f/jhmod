@@ -1,4 +1,4 @@
-package cmd
+package savecmd
 
 import (
 	"fmt"
@@ -55,4 +55,8 @@ func saveInfoCmd() *cobra.Command {
 	cmd.PersistentFlags().BoolP("debug", "d", false, "Show more internal state of the tool.")
 
 	return cmd
+}
+
+func Cmd() *cobra.Command {
+	return saveCmd
 }

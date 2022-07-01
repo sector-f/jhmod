@@ -5,6 +5,13 @@
 
 A tool to work with Jupiter Hell game files.
 
+## Features
+
+- Create and extract `.nvc` archives
+- Scan for interesting `.nvc` archive paths referenced in the JH program
+- Get information from save files
+
+
 ## Install
 
 ### Manually

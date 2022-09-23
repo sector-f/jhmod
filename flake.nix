@@ -31,7 +31,7 @@
           pkgs = nixpkgsFor.${system};
         in
         {
-          go-hello = pkgs.buildGoModule {
+          jhmod = pkgs.buildGoModule {
             pname = "jhmod";
             inherit version;
             # In 'nix develop', we don't need a copy of the source tree
@@ -55,7 +55,7 @@
       # The default package for 'nix build'. This makes sense if the
       # flake provides only one package or there is a clear "main"
       # package.
-      defaultPackage = forAllSystems (system: self.packages.${system}.go-hello);
+      defaultPackage = forAllSystems (system: self.packages.${system}.jhmod);
       devShells = forAllSystems (system:
         let pkgs = nixpkgsFor.${system};
         in {
@@ -63,5 +63,11 @@
             buildInputs = with pkgs; [ go gopls gotools go-tools shellcheck ];
           };
         });
+      apps = forAllSystems (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.jhmod}/bin/jhmod";
+        };
+      });
     };
 }

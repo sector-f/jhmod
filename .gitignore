@@ -1,5 +1,8 @@
 /jhmod
 
+# Nix build output symlink
+/result
+
 # Discourage accidental staging of scratch files used by the tool.
 core.*
 core

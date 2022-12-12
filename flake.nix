@@ -1,3 +1,6 @@
+# See also
+# https://git.dotya.ml/wanderer/go-xkcdreader/src/branch/development/flake.nix
+# a fyne-gui based app packaged in a flake.nix
 {
   description = "A tool to work with Jupiter Hell game files";
 

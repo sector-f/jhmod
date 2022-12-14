@@ -1,4 +1,5 @@
 /jhmod
+/jhmod.exe
 
 # Discourage accidental staging of scratch files used by the tool.
 core.*

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"os"
 	"unicode"
 )
 
@@ -15,7 +16,7 @@ const (
 	magic = "\xde\xc0\xad\xde"
 )
 
-type savedata struct {
+type Savedata struct {
 	// Player name
 	PlayerName string
 	// Game mode.  This can be "jh", and various others.
@@ -25,6 +26,9 @@ type savedata struct {
 	// The seed used to generate the game.
 	Seed uint32
 }
+
+// TODO port legacy type `savedata` to `Savedata`
+type savedata = Savedata
 
 // No magic found on save file.
 var ErrNoMagicFound error = errors.New("no magic found")
@@ -134,4 +138,14 @@ func Parse(r io.Reader) (savedata, error) {
 		CurrentLevel: cur,
 		Seed:         seed,
 	}, nil
+}
+
+func ParseFile(path string) (savedata, error) {
+	f, openErr := os.Open(path)
+	if openErr != nil {
+		return savedata{}, openErr
+	}
+
+	defer f.Close()
+	return Parse(f)
 }

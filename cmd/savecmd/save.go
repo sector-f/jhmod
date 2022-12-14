@@ -29,14 +29,7 @@ func saveInfoCmd() *cobra.Command {
 				if debug {
 					fmt.Fprintf(os.Stderr, "Reading file %s\n", p)
 				}
-				f, openErr := os.Open(p)
-				if openErr != nil {
-					fmt.Fprintf(os.Stderr, "Failed to open '%s': %v\n", p, openErr)
-					errors++
-					continue
-				}
-				defer f.Close()
-				save, parseErr := savefile.Parse(f)
+				save, parseErr := savefile.ParseFile(p)
 				if parseErr != nil {
 					fmt.Fprintf(os.Stderr, "Failed to parse '%s: %v\n", p, parseErr)
 					errors++

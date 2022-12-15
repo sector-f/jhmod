@@ -98,7 +98,7 @@ func Run() {
 		digestHex := hex.EncodeToString(digest)
 		relPath := digestHex
 		var existing *StoredSaveFile = nil
-		if db.Where("sha256_hex = ?", digestHex).Find(&existing); existing != nil {
+		if db.Where("sha256_hex = ?", digestHex).Find(&existing).RowsAffected > 0 && existing != nil {
 			fmt.Fprintf(os.Stderr, "Saw save we already have in DB, skipping (%s).\n", digestHex)
 			return
 		}

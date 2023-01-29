@@ -31,6 +31,22 @@ func sha256File(path string) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
+func Connect() *gorm.DB {
+
+	dbPath := path.Join(
+		getSaveScumDir(),
+		"db.sqlite3",
+	)
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	if err != nil {
+		panic(fmt.Sprintf("Unable to open db \"%s\" %v", dbPath, err))
+	}
+	if err = db.AutoMigrate(&StoredSaveFile{}); err != nil {
+		panic(fmt.Sprintf("Could not migrate db.\n"))
+	}
+	return db
+}
+
 func Run() {
 	a := app.New()
 	w := a.NewWindow("jhmod manager")
@@ -67,18 +83,7 @@ func Run() {
 		fmt.Fprintf(os.Stderr, "Cannot make savescumdir %v\n", mkdirErr)
 		return
 	}
-
-	dbPath := path.Join(
-		getSaveScumDir(),
-		"db.sqlite3",
-	)
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-	if err != nil {
-		panic(fmt.Sprintf("Unable to open db \"%s\" %v", dbPath, err))
-	}
-	if err = db.AutoMigrate(&StoredSaveFile{}); err != nil {
-		panic(fmt.Sprintf("Could not migrate db.\n"))
-	}
+	db := Connect()
 
 	db.Last(&last)
 	updateLast(last)

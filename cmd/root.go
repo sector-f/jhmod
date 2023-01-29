@@ -7,6 +7,7 @@ import (
 	"github.com/sector-f/jhmod/cmd/managercmd"
 	"github.com/sector-f/jhmod/cmd/nvccmd"
 	"github.com/sector-f/jhmod/cmd/savecmd"
+	"github.com/sector-f/jhmod/cmd/scumcmd"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,7 @@ func init() {
 	rootCmd.AddCommand(nvccmd.Cmd())
 	rootCmd.AddCommand(savecmd.Cmd())
 	rootCmd.AddCommand(managercmd.Cmd())
+	rootCmd.AddCommand(scumcmd.Cmd())
 }
 
 func Execute() {

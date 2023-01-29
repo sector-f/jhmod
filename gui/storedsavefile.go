@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"os"
 	path "path/filepath"
 
@@ -24,6 +25,17 @@ type StoredSaveFile struct {
 	CurrentLevel string
 	// The seed used to generate the game.
 	Seed uint32
+}
+
+func (f StoredSaveFile) String() string {
+	return fmt.Sprintf("% 3d [%s] %s %s %s (%d)",
+		f.Id,
+		f.CreatedAt.Format("2006-01-02 15:04:06"),
+		f.GameMode,
+		f.PlayerName,
+		f.CurrentLevel,
+		f.Seed,
+	)
 }
 
 func (f StoredSaveFile) AbsPath() string {

@@ -9,7 +9,8 @@ import (
 )
 
 func init() {
-	saveCmd.AddCommand(saveInfoCmd())
+	saveCmd.AddCommand(info())
+
 }
 
 var saveCmd = &cobra.Command{
@@ -17,7 +18,7 @@ var saveCmd = &cobra.Command{
 	Short: "Work with save files",
 }
 
-func saveInfoCmd() *cobra.Command {
+func info() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "info FILE ...",
 		Short: "Show information about a save file",

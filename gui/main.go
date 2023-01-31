@@ -10,6 +10,7 @@ import (
 
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"github.com/sector-f/jhmod/savefile"
@@ -42,19 +43,28 @@ func Connect() *gorm.DB {
 		panic(fmt.Sprintf("Unable to open db \"%s\" %v", dbPath, err))
 	}
 	if err = db.AutoMigrate(&StoredSaveFile{}); err != nil {
-		panic(fmt.Sprintf("Could not migrate db.\n"))
+		panic("Could not migrate db.\n")
+	}
+	if err = db.AutoMigrate(&RestoreRecord{}); err != nil {
+		panic("Could not migrate db.\n")
 	}
 	return db
 }
 
 func Run() {
+	var db *gorm.DB
 	a := app.New()
 	w := a.NewWindow("jhmod manager")
 	lbl := widget.NewLabel("Last Save Will Show here")
 	var last *StoredSaveFile = nil
 	restoreLast := widget.NewButton("Restore Last", func() {
 		if last != nil {
-			last.Restore()
+			rr, err := last.Restore()
+			if err != nil {
+				dialog.ShowError(err, w)
+				return
+			}
+			db.Save(rr)
 		}
 	})
 	updateLast := func(f *StoredSaveFile) {
@@ -83,7 +93,7 @@ func Run() {
 		fmt.Fprintf(os.Stderr, "Cannot make savescumdir %v\n", mkdirErr)
 		return
 	}
-	db := Connect()
+	db = Connect()
 
 	db.Last(&last)
 	updateLast(last)

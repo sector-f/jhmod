@@ -30,9 +30,11 @@ func restore() *cobra.Command {
 			db := gui.Connect()
 			var saveFile gui.StoredSaveFile
 			db.First(&saveFile, args[0])
-			if err := saveFile.Restore(); err != nil {
+			rr, err := saveFile.Restore()
+			if err != nil {
 				panic(err)
 			}
+			db.Save(rr)
 			fmt.Printf("Restored %s to %s\n", saveFile.AbsPath(), saveFile.OriginalBase)
 		},
 	}
@@ -45,8 +47,13 @@ func list() *cobra.Command {
 		Short: "List savescum database entries",
 		Run: func(cmd *cobra.Command, args []string) {
 			var saveFiles []gui.StoredSaveFile
-			gui.Connect().Find(&saveFiles)
+			gui.Connect().Preload("Restores").Find(&saveFiles)
 			for _, saveFile := range saveFiles {
+				if len(saveFile.Restores) > 0 {
+					fmt.Print("SCUM ")
+				} else {
+					fmt.Print("     ")
+				}
 				fmt.Println(saveFile)
 			}
 		},

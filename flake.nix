@@ -66,7 +66,7 @@
             buildInputs = (with pkgs; [ go gopls gotools go-tools shellcheck libglvnd ]) ++ (with pkgs.xorg; [
               libX11 libXcursor libXrandr libXinerama libXfixes libXrender xinput libXi libXxf86vm libXext
             ]);
-            nativeBuildInputs = with pkgs; [ pkg-config ];
+            nativeBuildInputs = with pkgs; [ pkg-config gopls ];
           };
         });
       apps = forAllSystems (system: {

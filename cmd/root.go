@@ -18,6 +18,8 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(nvccmd.Cmd())
 	rootCmd.AddCommand(savecmd.Cmd())
+	rootCmd.AddCommand(UnzlibCommand())
+	rootCmd.AddCommand(ZlibCommand())
 }
 
 func Execute() {

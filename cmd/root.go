@@ -22,8 +22,8 @@ func init() {
 	rootCmd.AddCommand(savecmd.Cmd())
 	rootCmd.AddCommand(managercmd.Cmd())
 	rootCmd.AddCommand(scumcmd.Cmd())
-	rootCmd.AddCommand(UnzlibCommand())
-	rootCmd.AddCommand(ZlibCommand())
+	rootCmd.AddCommand(unzlibCommand())
+	rootCmd.AddCommand(zlibCommand())
 }
 
 func Execute() {

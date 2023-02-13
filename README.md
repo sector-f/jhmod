@@ -29,7 +29,14 @@ go install github.com/sector-f/jhmod
 
 ### Nix
 
-TODO
+A flake is offered in this repository.  You can add it to your own flake as a
+input, then add it to your `environment.systemPackages`.  See example usage
+[here](https://gitlab.com/search?project_id=36950231&search=jhmod).
+
+You can develop using the flake via `nix develop` or setting up direnv so it
+auto-loads the flake.  Add `use flake` to your `.envrc` then run `direnv
+allow`.
+
 
 ## Usage
 

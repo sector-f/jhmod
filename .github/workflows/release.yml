@@ -5,7 +5,7 @@ on:
 
 jobs:
   release-matrix:
-    runs-on: ubunt-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         goos:

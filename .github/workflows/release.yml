@@ -1,7 +1,9 @@
 name: Release Go Binary
 
 on:
-  - push
+  release:
+    types:
+      - created
 
 jobs:
   release-matrix:
@@ -18,6 +20,9 @@ jobs:
           - arm64
         exclude:
           - goarch: "386"
+            goos: darwin
+          # Darwin arm64 fails with /usr/bin/ld: unrecognized option '-pagezero_size'
+          - goarch: arm64
             goos: darwin
           - goarch: arm64
             goos: windows

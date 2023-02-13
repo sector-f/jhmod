@@ -1,12 +1,13 @@
-# .github/workflows/release.yaml
+name: Release Go Binary
 
 on:
-  release:
+  - release:
     types:
       - created
+  - push
+
 jobs:
   release-matrix:
-    name: Release Go Binary
     runs-on: ubunt-latest
     strategy:
       matrix:

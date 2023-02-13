@@ -2,7 +2,8 @@
 
 on:
   release:
-    types: [created]
+    types:
+      - created
 jobs:
   release-matrix:
     name: Release Go Binary
@@ -22,14 +23,14 @@ jobs:
             goos: darwin
           - goarch: arm64
             goos: windows
-  steps:
-    - uses: actions/checkout@v3
-    - uses: wangyoucao577/go-release-action@v1.35
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ matrix.goos }}
-        goarch: ${{ matrix.goarch }}
-        goversion: https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz
-        project_path: .
-        binary_name: jhmod
-        extra_files: LICENSE README.md scripts examples
+    steps:
+      - uses: actions/checkout@v3
+      - uses: wangyoucao577/go-release-action@v1.35
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz
+          project_path: .
+          binary_name: jhmod
+          extra_files: LICENSE README.md scripts examples

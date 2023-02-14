@@ -1,0 +1,39 @@
+name: Release Go Binary
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  release-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos:
+          - linux
+          - windows
+          - darwin
+        goarch:
+          - "386"
+          - amd64
+          - arm64
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          # Darwin arm64 fails with /usr/bin/ld: unrecognized option '-pagezero_size'
+          - goarch: arm64
+            goos: darwin
+          - goarch: arm64
+            goos: windows
+    steps:
+      - uses: actions/checkout@v3
+      - uses: wangyoucao577/go-release-action@v1.35
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: https://dl.google.com/go/go1.20.linux-amd64.tar.gz
+          project_path: .
+          binary_name: jhmod
+          extra_files: LICENSE README.md scripts examples

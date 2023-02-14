@@ -29,7 +29,14 @@ go install github.com/sector-f/jhmod
 
 ### Nix
 
-TODO
+A flake is offered in this repository.  You can add it to your own flake as a
+input, then add it to your `environment.systemPackages`.  See example usage
+[here](https://gitlab.com/search?project_id=36950231&search=jhmod).
+
+You can develop using the flake via `nix develop` or setting up direnv so it
+auto-loads the flake.  Add `use flake` to your `.envrc` then run `direnv
+allow`.
+
 
 ## Usage
 
@@ -88,13 +95,15 @@ using `jhmod pathlist scan`, however, it doesn't find graphics data
 2. Use `jhmod extract -f core.nvc -p samples/pathlist.txt` to extract the
    files into the current directory.  Most (all?) files should be located in a
    `data` subdirectory.
-3. Build an "overlay" directory that mirrors the directory structure of the
-   extracted paths.  It only has to have the directories needed to place your
-   modified game files.
-4. Put your mod files in this overlay directory.
-5. Copy the overlay directory tree into your JH gamedir such that your overlay
-   directory has its `data/` directory adjacent to the `core.nvc` file.
-6. Viola you can test your mod.
+3. Create a folder in your JH game directory called `mods`
+4. Create a subfolder in your JH game directory that will contain your mod, say `coolestmod`
+5. Put some mod lua code into `mods/coolestmod/main.lua`.  This will run when the game loads.
+6. Use the files created via `jhmod extract ...` to determine what lua tables
+   to manipulate to achieve your desired effect.
+7. You can now test your mod.
+
+See [Modding](https://jupiterhell.fandom.com/wiki/Modding) on the Jupiter Hell
+Wiki for more information.
 
 ## License
 

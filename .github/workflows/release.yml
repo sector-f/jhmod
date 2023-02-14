@@ -1,9 +1,7 @@
 name: Release Go Binary
 
 on:
-  release:
-    types:
-      - created
+  - push
 
 jobs:
   release-matrix:

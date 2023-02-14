@@ -28,7 +28,7 @@ jobs:
             goos: windows
     steps:
       - uses: actions/checkout@v3
-      - uses: wangyoucao577/go-release-action@v1.35
+      - uses: winny-/go-release-action@f3844f1ef659d97f08db54c526c2ce43f3e5dec9
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
@@ -37,3 +37,4 @@ jobs:
           project_path: .
           binary_name: jhmod
           extra_files: LICENSE README.md scripts examples
+          tarbomb: false

@@ -2,7 +2,7 @@
   description = "A tool to work with Jupiter Hell game files";
 
   # Nixpkgs / NixOS version to use.
-  inputs.nixpkgs.url = "nixpkgs/nixos-21.11";
+  inputs.nixpkgs.url = "nixpkgs/nixos-23.05";
 
   outputs = { self, nixpkgs }:
     let
@@ -48,7 +48,7 @@
             # remeber to bump this hash when your dependencies change.
             #vendorSha256 = pkgs.lib.fakeSha256;
 
-            vendorSha256 = "sha256-ox631K0cq0GtaEPI+Vy+hy2KE8NC773npQjJuEyMy/A=";
+            vendorSha256 = "sha256-xBUeWmMBZLz2LRihi6NtNT9mLIST7/vFwBVp2ZZZyy4=";
           };
         });
 
